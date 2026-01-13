@@ -15,6 +15,12 @@ License
 
 3-clause BSD (see LICENSE.md)
 
+Build & Tests
+-------------
+
+- Debug build/test: `zig build test` (C23 flags, warnings-as-errors).
+- Optimized build: `zig build release` (ReleaseFast profile).
+- Artifacts install under `zig-out/`. Re-enable sanitizers in `build.zig` if your toolchain provides ASan/UBSan.
 
 Some code details
 -----------------
