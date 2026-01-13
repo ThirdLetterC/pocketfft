@@ -13,7 +13,7 @@ advantages:
 License
 -------
 
-3-clause BSD (see LICENSE.md)
+3-clause BSD (see LICENSE)
 
 Build & Tests
 -------------
