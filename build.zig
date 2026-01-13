@@ -31,6 +31,32 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(exe);
 
+    const release_mod = b.createModule(.{
+        .target = target,
+        .optimize = .ReleaseFast,
+        .link_libc = true,
+    });
+    release_mod.addCSourceFiles(.{
+        .files = &.{
+            "pocketfft.c",
+            "ffttest.c",
+        },
+        .flags = &.{
+            "-std=c2x",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror",
+        },
+    });
+    release_mod.addIncludePath(b.path("."));
+    release_mod.linkSystemLibrary("m", .{});
+
+    const release_exe = b.addExecutable(.{
+        .name = "pocketfft_test_release",
+        .root_module = release_mod,
+    });
+
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
     run_cmd.setName("pocketfft_test");
@@ -39,4 +65,7 @@ pub fn build(b: *std.Build) void {
 
     const run_step = b.step("test", "Run pocketfft test binary");
     run_step.dependOn(&run_cmd.step);
+
+    const release_step = b.step("release", "Build optimized pocketfft test binary");
+    release_step.dependOn(&b.addInstallArtifact(release_exe, .{}).step);
 }
