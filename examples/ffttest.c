@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "pocketfft.h"
+#include "pocketfft/pocketfft.h"
 
 constexpr size_t MAX_LEN = 8'192;
 

@@ -11,18 +11,18 @@ pub fn build(b: *std.Build) void {
     });
     root_mod.addCSourceFiles(.{
         .files = &.{
-            "pocketfft.c",
-            "ffttest.c",
+            "src/pocketfft.c",
+            "examples/ffttest.c",
         },
         .flags = &.{
-            "-std=c2x",
+            "-std=c23",
             "-Wall",
             "-Wextra",
             "-Wpedantic",
             "-Werror",
         },
     });
-    root_mod.addIncludePath(b.path("."));
+    root_mod.addIncludePath(b.path("include"));
     root_mod.linkSystemLibrary("m", .{});
 
     const exe = b.addExecutable(.{
@@ -38,18 +38,18 @@ pub fn build(b: *std.Build) void {
     });
     release_mod.addCSourceFiles(.{
         .files = &.{
-            "pocketfft.c",
-            "ffttest.c",
+            "src/pocketfft.c",
+            "examples/ffttest.c",
         },
         .flags = &.{
-            "-std=c2x",
+            "-std=c23",
             "-Wall",
             "-Wextra",
             "-Wpedantic",
             "-Werror",
         },
     });
-    release_mod.addIncludePath(b.path("."));
+    release_mod.addIncludePath(b.path("include"));
     release_mod.linkSystemLibrary("m", .{});
 
     const release_exe = b.addExecutable(.{
