@@ -42,6 +42,11 @@ static int test_real(void) {
   for (size_t length = 1; length <= MAX_LEN; ++length) {
     memcpy(data, odata, length * sizeof(double));
     rfft_plan plan = make_rfft_plan(length);
+    if (plan == nullptr) {
+      printf("failed to create real fft plan at length %zu\n", length);
+      ret = 1;
+      break;
+    }
     auto status = rfft_forward(plan, data, 1.);
     if (status != 0) {
       printf("forward real fft failed at length %zu with code %i\n", length,
@@ -79,6 +84,11 @@ static int test_complex(void) {
   for (size_t length = 1; length <= MAX_LEN; ++length) {
     memcpy(data, odata, 2 * length * sizeof(double));
     cfft_plan plan = make_cfft_plan(length);
+    if (plan == nullptr) {
+      printf("failed to create complex fft plan at length %zu\n", length);
+      ret = 1;
+      break;
+    }
     auto status = cfft_forward(plan, data, 1.);
     if (status != 0) {
       printf("forward complex fft failed at length %zu with code %i\n", length,

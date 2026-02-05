@@ -1948,6 +1948,7 @@ typedef struct fftblue_plan_i *fftblue_plan;
   fftblue_plan plan = RALLOC(fftblue_plan_i, 1);
   if (!plan)
     return nullptr;
+  plan->plan = nullptr;
   plan->n = length;
   plan->n2 = good_size(plan->n * 2 - 1);
   plan->mem = RALLOC(double, 2 * plan->n + 2 * plan->n2);
@@ -1990,20 +1991,21 @@ typedef struct fftblue_plan_i *fftblue_plan;
     plan->bkf[m] = 0.;
   plan->plan = make_cfftp_plan(plan->n2);
   if (!plan->plan) {
-    DEALLOC(tmp);
-    DEALLOC(plan->mem);
-    DEALLOC(plan);
-    return nullptr;
+    goto fail;
   }
   if (cfftp_forward(plan->plan, plan->bkf, 1.) != 0) {
-    DEALLOC(tmp);
-    DEALLOC(plan->mem);
-    DEALLOC(plan);
-    return nullptr;
+    goto fail;
   }
   DEALLOC(tmp);
 
   return plan;
+
+fail:
+  DEALLOC(tmp);
+  destroy_cfftp_plan(plan->plan);
+  DEALLOC(plan->mem);
+  DEALLOC(plan);
+  return nullptr;
 }
 
 static NOINLINE void destroy_fftblue_plan(fftblue_plan plan) {
@@ -2185,17 +2187,23 @@ void destroy_cfft_plan(cfft_plan plan) {
 }
 
 WARN_UNUSED_RESULT int cfft_backward(cfft_plan plan, double c[], double fct) {
+  if ((plan == nullptr) || (c == nullptr))
+    return -1;
   if (plan->packplan)
     return cfftp_backward(plan->packplan, c, fct);
-  // if (plan->blueplan)
-  return cfftblue_backward(plan->blueplan, c, fct);
+  if (plan->blueplan)
+    return cfftblue_backward(plan->blueplan, c, fct);
+  return -1;
 }
 
 WARN_UNUSED_RESULT int cfft_forward(cfft_plan plan, double c[], double fct) {
+  if ((plan == nullptr) || (c == nullptr))
+    return -1;
   if (plan->packplan)
     return cfftp_forward(plan->packplan, c, fct);
-  // if (plan->blueplan)
-  return cfftblue_forward(plan->blueplan, c, fct);
+  if (plan->blueplan)
+    return cfftblue_forward(plan->blueplan, c, fct);
+  return -1;
 }
 
 typedef struct rfft_plan_i {
@@ -2250,27 +2258,41 @@ void destroy_rfft_plan(rfft_plan plan) {
 }
 
 [[nodiscard]] size_t rfft_length(rfft_plan plan) {
+  if (plan == nullptr)
+    return 0;
   if (plan->packplan)
     return plan->packplan->length;
-  return plan->blueplan->n;
+  if (plan->blueplan)
+    return plan->blueplan->n;
+  return 0;
 }
 
 [[nodiscard]] size_t cfft_length(cfft_plan plan) {
+  if (plan == nullptr)
+    return 0;
   if (plan->packplan)
     return plan->packplan->length;
-  return plan->blueplan->n;
+  if (plan->blueplan)
+    return plan->blueplan->n;
+  return 0;
 }
 
 WARN_UNUSED_RESULT int rfft_backward(rfft_plan plan, double c[], double fct) {
+  if ((plan == nullptr) || (c == nullptr))
+    return -1;
   if (plan->packplan)
     return rfftp_backward(plan->packplan, c, fct);
-  else // if (plan->blueplan)
+  if (plan->blueplan)
     return rfftblue_backward(plan->blueplan, c, fct);
+  return -1;
 }
 
 WARN_UNUSED_RESULT int rfft_forward(rfft_plan plan, double c[], double fct) {
+  if ((plan == nullptr) || (c == nullptr))
+    return -1;
   if (plan->packplan)
     return rfftp_forward(plan->packplan, c, fct);
-  else // if (plan->blueplan)
+  if (plan->blueplan)
     return rfftblue_forward(plan->blueplan, c, fct);
+  return -1;
 }
