@@ -11,6 +11,7 @@
  */
 
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,9 +20,12 @@
 
 constexpr size_t MAX_LEN = 8'192;
 
-static void fill_random(double *data, size_t length) {
-  for (size_t m = 0; m < length; ++m)
-    data[m] = rand() / (RAND_MAX + 1.0) - 0.5;
+    static void
+    fill_pattern(double *data, size_t length) {
+  for (size_t m = 0; m < length; ++m) {
+    double x = (double)(m + 1);
+    data[m] = sin(0.125 * x) + cos(0.375 * x);
+  }
 }
 
 static double errcalc(double *data, double *odata, size_t length) {
@@ -30,14 +34,84 @@ static double errcalc(double *data, double *odata, size_t length) {
     errsum += (data[m] - odata[m]) * (data[m] - odata[m]);
     sum += odata[m] * odata[m];
   }
+  if (sum == 0) return errsum == 0 ? 0 : INFINITY;
   return sqrt(errsum / sum);
+}
+
+static int test_api_contract(void) {
+  auto ret = 0;
+  double data[4] = {1., 2., 3., 4.};
+
+  if (make_rfft_plan(0) != nullptr) {
+    printf("make_rfft_plan(0) did not fail closed\n");
+    ret = 1;
+  }
+  if (make_cfft_plan(0) != nullptr) {
+    printf("make_cfft_plan(0) did not fail closed\n");
+    ret = 1;
+  }
+  if (make_rfft_plan(SIZE_MAX) != nullptr) {
+    printf("make_rfft_plan(SIZE_MAX) did not fail closed\n");
+    ret = 1;
+  }
+  if (make_cfft_plan(SIZE_MAX) != nullptr) {
+    printf("make_cfft_plan(SIZE_MAX) did not fail closed\n");
+    ret = 1;
+  }
+  if (rfft_forward(nullptr, data, 1.) != -1) {
+    printf("rfft_forward(nullptr, ...) did not reject null plan\n");
+    ret = 1;
+  }
+  if (rfft_backward(nullptr, data, 1.) != -1) {
+    printf("rfft_backward(nullptr, ...) did not reject null plan\n");
+    ret = 1;
+  }
+  if (cfft_forward(nullptr, data, 1.) != -1) {
+    printf("cfft_forward(nullptr, ...) did not reject null plan\n");
+    ret = 1;
+  }
+  if (cfft_backward(nullptr, data, 1.) != -1) {
+    printf("cfft_backward(nullptr, ...) did not reject null plan\n");
+    ret = 1;
+  }
+
+  auto real_plan = make_rfft_plan(4);
+  auto complex_plan = make_cfft_plan(2);
+  if ((real_plan == nullptr) || (complex_plan == nullptr)) {
+    printf("failed to create API contract test plans\n");
+    destroy_rfft_plan(real_plan);
+    destroy_cfft_plan(complex_plan);
+    return 1;
+  }
+  if (rfft_forward(real_plan, nullptr, 1.) != -1) {
+    printf("rfft_forward(plan, nullptr, ...) did not reject null data\n");
+    ret = 1;
+  }
+  if (rfft_backward(real_plan, nullptr, 1.) != -1) {
+    printf("rfft_backward(plan, nullptr, ...) did not reject null data\n");
+    ret = 1;
+  }
+  if (cfft_forward(complex_plan, nullptr, 1.) != -1) {
+    printf("cfft_forward(plan, nullptr, ...) did not reject null data\n");
+    ret = 1;
+  }
+  if (cfft_backward(complex_plan, nullptr, 1.) != -1) {
+    printf("cfft_backward(plan, nullptr, ...) did not reject null data\n");
+    ret = 1;
+  }
+
+  destroy_rfft_plan(real_plan);
+  destroy_cfft_plan(complex_plan);
+  destroy_rfft_plan(nullptr);
+  destroy_cfft_plan(nullptr);
+  return ret;
 }
 
 static int test_real(void) {
   double data[MAX_LEN], odata[MAX_LEN];
   const double epsilon = 2e-15;
   auto ret = 0;
-  fill_random(odata, MAX_LEN);
+  fill_pattern(odata, MAX_LEN);
   double errsum = 0;
   for (size_t length = 1; length <= MAX_LEN; ++length) {
     memcpy(data, odata, length * sizeof(double));
@@ -77,7 +151,7 @@ static int test_real(void) {
 
 static int test_complex(void) {
   double data[2 * MAX_LEN], odata[2 * MAX_LEN];
-  fill_random(odata, 2 * MAX_LEN);
+  fill_pattern(odata, 2 * MAX_LEN);
   const double epsilon = 2e-15;
   auto ret = 0;
   double errsum = 0;
@@ -118,7 +192,8 @@ static int test_complex(void) {
 }
 
 int main() {
-  auto ret = test_real();
+  auto ret = test_api_contract();
+  ret += test_real();
   ret += test_complex();
   return ret;
 }

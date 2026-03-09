@@ -1,10 +1,11 @@
-set shell := ["bash", "-uc"]
+set shell := ["bash", "-lc"]
 
+cc := "zig cc"
 cflags := "-std=c23 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined,leak -g -Iinclude"
 ldflags := "-fsanitize=address,undefined,leak -lm"
 
 build:
-    cc {{cflags}} src/pocketfft.c examples/ffttest.c -o pocketfft_test {{ldflags}}
+    {{cc}} {{cflags}} src/pocketfft.c examples/ffttest.c -o pocketfft_test {{ldflags}}
 
 test: build
     ./pocketfft_test
