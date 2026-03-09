@@ -60,9 +60,11 @@ buffer pointers.
 - Execution is in-process and CPU-intensive. Adversarially chosen lengths can
   be used for denial of service through memory pressure or compute cost if the
   embedding application does not bound work.
-- Floating-point inputs are treated as ordinary numeric data. The library does
-  not reject `NaN`, `Inf`, denormals, or adversarial values chosen to stress
-  numeric edge cases.
+- Public execution entry points reject non-finite scale factors by returning
+  `-1`.
+- Buffer contents are treated as ordinary numeric data. The library does not
+  reject `NaN`, `Inf`, denormals, or adversarial values chosen to stress
+  numeric edge cases inside caller-provided buffers.
 - No constant-time or side-channel-resistant behavior is claimed.
 - This library is not a sandbox or policy engine. Validation of user input,
   rate limiting, provenance, tenant isolation, and process-level containment
@@ -102,11 +104,14 @@ Validation paths present in this checkout:
 - `zig build test`
 - `just test`
 
-The current in-tree test coverage is the numeric regression binary in
-`examples/ffttest.c`, which sweeps real and complex transform lengths from
-`1` to `8'192`. The repository does not currently include dedicated fuzzing
-harnesses or a published hardening profile beyond the sanitizer-enabled
-`just test` build.
+The current wired-in test coverage is `testing/tests.c`, which exercises
+public API rejection paths for `nullptr`, oversized lengths, and non-finite
+scale factors, plus reference-checked real and complex transforms through
+length `97`. The repository also ships `examples/ffttest.c` as a larger
+numeric sweep from `1` to `8'192`, but that example binary is not part of the
+default `zig build test` or `just test` flow. The repository does not
+currently include dedicated fuzzing harnesses or a published hardening profile
+beyond the sanitizer-enabled `just test` build.
 
 ## Supported Versions
 

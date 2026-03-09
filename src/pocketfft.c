@@ -45,6 +45,10 @@
   return true;
 }
 
+[[nodiscard]] static bool scale_factor_is_valid(double fct) {
+  return isfinite(fct);
+}
+
 #define RALLOC(type, num) ((type *)checked_calloc((num), sizeof(type)))
 #define DEALLOC(ptr) \
   do {               \
@@ -2251,14 +2255,16 @@ void destroy_cfft_plan(cfft_plan plan) {
 }
 
 WARN_UNUSED_RESULT int cfft_backward(cfft_plan plan, double c[], double fct) {
-  if ((plan == nullptr) || (c == nullptr)) return -1;
+  if ((plan == nullptr) || (c == nullptr) || !scale_factor_is_valid(fct))
+    return -1;
   if (plan->packplan) return cfftp_backward(plan->packplan, c, fct);
   if (plan->blueplan) return cfftblue_backward(plan->blueplan, c, fct);
   return -1;
 }
 
 WARN_UNUSED_RESULT int cfft_forward(cfft_plan plan, double c[], double fct) {
-  if ((plan == nullptr) || (c == nullptr)) return -1;
+  if ((plan == nullptr) || (c == nullptr) || !scale_factor_is_valid(fct))
+    return -1;
   if (plan->packplan) return cfftp_forward(plan->packplan, c, fct);
   if (plan->blueplan) return cfftblue_forward(plan->blueplan, c, fct);
   return -1;
@@ -2334,14 +2340,16 @@ void destroy_rfft_plan(rfft_plan plan) {
 }
 
 WARN_UNUSED_RESULT int rfft_backward(rfft_plan plan, double c[], double fct) {
-  if ((plan == nullptr) || (c == nullptr)) return -1;
+  if ((plan == nullptr) || (c == nullptr) || !scale_factor_is_valid(fct))
+    return -1;
   if (plan->packplan) return rfftp_backward(plan->packplan, c, fct);
   if (plan->blueplan) return rfftblue_backward(plan->blueplan, c, fct);
   return -1;
 }
 
 WARN_UNUSED_RESULT int rfft_forward(rfft_plan plan, double c[], double fct) {
-  if ((plan == nullptr) || (c == nullptr)) return -1;
+  if ((plan == nullptr) || (c == nullptr) || !scale_factor_is_valid(fct))
+    return -1;
   if (plan->packplan) return rfftp_forward(plan->packplan, c, fct);
   if (plan->blueplan) return rfftblue_forward(plan->blueplan, c, fct);
   return -1;

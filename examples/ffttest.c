@@ -20,12 +20,16 @@
 
 constexpr size_t MAX_LEN = 8'192;
 
-    static void
-    fill_pattern(double *data, size_t length) {
+static void fill_pattern(double *data, size_t length) {
   for (size_t m = 0; m < length; ++m) {
     double x = (double)(m + 1);
     data[m] = sin(0.125 * x) + cos(0.375 * x);
   }
+}
+
+[[nodiscard]] static bool arrays_match(const double *lhs, const double *rhs,
+                                       size_t length) {
+  return memcmp(lhs, rhs, length * sizeof(*lhs)) == 0;
 }
 
 static double errcalc(double *data, double *odata, size_t length) {
@@ -41,6 +45,8 @@ static double errcalc(double *data, double *odata, size_t length) {
 static int test_api_contract(void) {
   auto ret = 0;
   double data[4] = {1., 2., 3., 4.};
+  constexpr double original_real_data[4] = {1., 2., 3., 4.};
+  constexpr double original_complex_data[4] = {1., 2., 3., 4.};
 
   if (make_rfft_plan(0) != nullptr) {
     printf("make_rfft_plan(0) did not fail closed\n");
@@ -74,6 +80,14 @@ static int test_api_contract(void) {
     printf("cfft_backward(nullptr, ...) did not reject null plan\n");
     ret = 1;
   }
+  if (rfft_length(nullptr) != 0) {
+    printf("rfft_length(nullptr) did not return 0\n");
+    ret = 1;
+  }
+  if (cfft_length(nullptr) != 0) {
+    printf("cfft_length(nullptr) did not return 0\n");
+    ret = 1;
+  }
 
   auto real_plan = make_rfft_plan(4);
   auto complex_plan = make_cfft_plan(2);
@@ -97,6 +111,42 @@ static int test_api_contract(void) {
   }
   if (cfft_backward(complex_plan, nullptr, 1.) != -1) {
     printf("cfft_backward(plan, nullptr, ...) did not reject null data\n");
+    ret = 1;
+  }
+  memcpy(data, original_real_data, sizeof(data));
+  if (rfft_forward(real_plan, data, INFINITY) != -1) {
+    printf("rfft_forward(plan, ..., +Inf) did not reject non-finite scale\n");
+    ret = 1;
+  }
+  if (!arrays_match(data, original_real_data, 4)) {
+    printf("rfft_forward(plan, ..., +Inf) mutated data on rejection\n");
+    ret = 1;
+  }
+  memcpy(data, original_real_data, sizeof(data));
+  if (rfft_backward(real_plan, data, NAN) != -1) {
+    printf("rfft_backward(plan, ..., NaN) did not reject non-finite scale\n");
+    ret = 1;
+  }
+  if (!arrays_match(data, original_real_data, 4)) {
+    printf("rfft_backward(plan, ..., NaN) mutated data on rejection\n");
+    ret = 1;
+  }
+  memcpy(data, original_complex_data, sizeof(data));
+  if (cfft_forward(complex_plan, data, -INFINITY) != -1) {
+    printf("cfft_forward(plan, ..., -Inf) did not reject non-finite scale\n");
+    ret = 1;
+  }
+  if (!arrays_match(data, original_complex_data, 4)) {
+    printf("cfft_forward(plan, ..., -Inf) mutated data on rejection\n");
+    ret = 1;
+  }
+  memcpy(data, original_complex_data, sizeof(data));
+  if (cfft_backward(complex_plan, data, NAN) != -1) {
+    printf("cfft_backward(plan, ..., NaN) did not reject non-finite scale\n");
+    ret = 1;
+  }
+  if (!arrays_match(data, original_complex_data, 4)) {
+    printf("cfft_backward(plan, ..., NaN) mutated data on rejection\n");
     ret = 1;
   }
 

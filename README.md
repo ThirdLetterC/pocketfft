@@ -19,8 +19,9 @@ Build & Tests
 -------------
 
 - Debug build/test: `zig build test` (C23 flags, warnings-as-errors).
+- Sanitized regression run: `just test` (defaults to `cc`; override with `CC=...`; runs `testing/tests.c`).
 - Optimized build: `zig build release` (ReleaseFast profile).
-- Artifacts install under `zig-out/`. Re-enable sanitizers in `build.zig` if your toolchain provides ASan/UBSan.
+- Artifacts install under `zig-out/`. `just test` enables ASan, UBSan, and LSan on toolchains that support them.
 
 Some code details
 -----------------

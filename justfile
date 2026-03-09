@@ -1,17 +1,17 @@
 set shell := ["bash", "-lc"]
 
-cc := "zig cc"
-cflags := "-std=c23 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined,leak -g -Iinclude"
+cc := env_var_or_default("CC", "cc")
+cflags := "-std=c2x -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined,leak -g -Iinclude"
 ldflags := "-fsanitize=address,undefined,leak -lm"
 
 build:
-    {{cc}} {{cflags}} src/pocketfft.c examples/ffttest.c -o pocketfft_test {{ldflags}}
+    {{cc}} {{cflags}} src/pocketfft.c testing/tests.c -o pocketfft_test {{ldflags}}
 
 test: build
     ./pocketfft_test
 
 fmt:
-    clang-format -i src/*.c examples/*.c include/pocketfft/*.h
+    clang-format -i src/*.c examples/*.c testing/*.c include/pocketfft/*.h
 
 clean:
     rm -f pocketfft_test a.out
